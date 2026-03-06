@@ -16,9 +16,15 @@ const __dirname = path.dirname(__filename);
 const JWT_SECRET = process.env.JWT_SECRET || "super-secret-key";
 const MONGODB_URI = process.env.MONGODB_URI;
 
+if (!MONGODB_URI) {
+  console.error("❌ MONGODB_URI is missing in environment variables");
+  process.exit(1);
+}
+
 const app = express();
 
-/* ✅ CORS Fix */
+/* ------------------ Middleware ------------------ */
+
 app.use(
   cors({
     origin: "*",
@@ -60,14 +66,19 @@ const DiaryEntry = mongoose.model("DiaryEntry", diaryEntrySchema);
 
 /* ------------------ Auth Middleware ------------------ */
 
-const authenticateToken = (req: any, res: any, next: any) => {
+const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
-  if (!token) return res.status(401).json({ error: "Unauthorized" });
+  if (!token) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
-  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
-    if (err) return res.status(403).json({ error: "Forbidden" });
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     req.user = user;
     next();
   });
@@ -93,7 +104,10 @@ app.post("/api/signup", async (req, res) => {
     await user.save();
 
     res.status(201).json({ message: "User created successfully" });
-  } catch (err: any) {
+
+  } catch (err) {
+    console.error(err);
+
     if (err.code === 11000) {
       return res.status(400).json({ error: "Email already exists" });
     }
@@ -108,7 +122,13 @@ app.post("/api/login", async (req, res) => {
   try {
     const user = await User.findOne({ email });
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
@@ -120,9 +140,15 @@ app.post("/api/login", async (req, res) => {
 
     res.json({
       token,
-      user: { id: user._id, name: user.name, email: user.email },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
     });
-  } catch {
+
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -130,37 +156,43 @@ app.post("/api/login", async (req, res) => {
 /* ------------------ Server Start ------------------ */
 
 async function startServer() {
+
   try {
-    await mongoose.connect(MONGODB_URI!);
-    console.log("Connected to MongoDB Atlas");
+    await mongoose.connect(MONGODB_URI);
+    console.log("✅ Connected to MongoDB Atlas");
+
   } catch (err) {
-    console.error("MongoDB connection error:", err);
+    console.error("❌ MongoDB connection failed:", err);
+    process.exit(1);
   }
 
   if (process.env.NODE_ENV !== "production") {
+
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
 
     app.use(vite.middlewares);
+
   } else {
+
     app.use(express.static(path.join(__dirname, "dist")));
 
-    /* ✅ IMPORTANT FIX */
     app.get("*", (req, res, next) => {
+
       if (req.path.startsWith("/api")) {
-        return next(); // let API handle it
+        return next();
       }
 
       res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
   }
 
-  const PORT = Number(process.env.PORT) || 3000;
+  const PORT = process.env.PORT || 3000;
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
   });
 }
 

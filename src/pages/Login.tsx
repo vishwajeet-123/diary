@@ -25,49 +25,42 @@ export default function Login({ onLogin }: LoginProps) {
   }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError("");
-  setMessage("");
-  setLoading(true);
+    e.preventDefault();
+    setError("");
+    setMessage("");
+    setLoading(true);
 
-  try {
-    const res = await fetch(`${API_URL}/api/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    });
+      try {
+        const res = await fetch(`${API_URL}/api/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+      });
 
-    let data;
+      if (!res.ok) {
+        throw new Error("Invalid email or password");
+      }
 
-    try {
-      data = await res.json();
-    } catch {
-      throw new Error("Server returned invalid response");
+      const data = await res.json();
+
+      if (!data.token) {
+        throw new Error("Login failed");
+      }
+
+      onLogin(data.user, data.token);
+      navigate("/dashboard");
+
+    } catch (err: any) {
+      if (err.message === "Failed to fetch") {
+        setError("Cannot connect to server. Please try again.");
+      } else {
+        setError(err.message);
+      }
+    } finally {
+      setLoading(false);
     }
-
-    if (!res.ok) {
-      throw new Error(data.error || "Invalid email or password");
-    }
-
-    if (!data.token) {
-      throw new Error("Login failed");
-    }
-
-    onLogin(data.user, data.token);
-    navigate("/dashboard");
-
-  } catch (err: any) {
-    if (err.message === "Failed to fetch") {
-      setError("Cannot connect to server. Please try again.");
-    } else {
-      setError(err.message);
-    }
-  } finally {
-    setLoading(false);
-  }
-};
   };
 
   return (
