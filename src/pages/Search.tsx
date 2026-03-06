@@ -162,9 +162,10 @@ export default function Search() {
             {results.map((entry) => {
               const tagInfo = getTagInfo(entry.tag);
               const TagIcon = tagInfo.icon;
+              const id = entry.id || entry._id;
               return (
                 <motion.div
-                  key={entry.id}
+                  key={id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="glass rounded-3xl overflow-hidden flex flex-col sm:flex-row"

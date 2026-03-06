@@ -16,7 +16,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [entryId, setEntryId] = useState<number | null>(null);
+  const [entryId, setEntryId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchEntry(date);
@@ -33,7 +33,7 @@ export default function Dashboard() {
       if (data) {
         setContent(data.content);
         setSelectedTag(data.tag);
-        setEntryId(data.id);
+        setEntryId(data.id || data._id);
       } else {
         setContent("");
         setSelectedTag(TAGS[0].id);
