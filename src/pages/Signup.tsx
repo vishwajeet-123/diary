@@ -39,7 +39,7 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/signup", {
+      const res = await fetch("https://diary.onrender.com/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
