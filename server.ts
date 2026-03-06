@@ -17,13 +17,13 @@ const JWT_SECRET = process.env.JWT_SECRET || "super-secret-key";
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  console.error("❌ MONGODB_URI is missing in environment variables");
+  console.error("❌ MONGODB_URI is missing");
   process.exit(1);
 }
 
 const app = express();
 
-/* ------------------ Middleware ------------------ */
+/* ---------------- Middleware ---------------- */
 
 app.use(
   cors({
@@ -35,7 +35,7 @@ app.use(
 
 app.use(express.json());
 
-/* ------------------ MongoDB Models ------------------ */
+/* ---------------- MongoDB Models ---------------- */
 
 const userSchema = new mongoose.Schema(
   {
@@ -64,9 +64,10 @@ diaryEntrySchema.index({ userId: 1, date: 1 }, { unique: true });
 
 const DiaryEntry = mongoose.model("DiaryEntry", diaryEntrySchema);
 
-/* ------------------ Auth Middleware ------------------ */
+/* ---------------- Auth Middleware ---------------- */
 
 const authenticateToken = (req, res, next) => {
+
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
@@ -75,6 +76,7 @@ const authenticateToken = (req, res, next) => {
   }
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
+
     if (err) {
       return res.status(403).json({ error: "Forbidden" });
     }
@@ -84,12 +86,14 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-/* ------------------ API Routes ------------------ */
+/* ---------------- AUTH ROUTES ---------------- */
 
 app.post("/api/signup", async (req, res) => {
+
   const { name, email, password, securityQuestion, securityAnswer } = req.body;
 
   try {
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const hashedAnswer = await bcrypt.hash(securityAnswer.toLowerCase(), 10);
 
@@ -106,7 +110,6 @@ app.post("/api/signup", async (req, res) => {
     res.status(201).json({ message: "User created successfully" });
 
   } catch (err) {
-    console.error(err);
 
     if (err.code === 11000) {
       return res.status(400).json({ error: "Email already exists" });
@@ -116,10 +119,13 @@ app.post("/api/signup", async (req, res) => {
   }
 });
 
+
 app.post("/api/login", async (req, res) => {
+
   const { email, password } = req.body;
 
   try {
+
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -148,20 +154,114 @@ app.post("/api/login", async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-/* ------------------ Server Start ------------------ */
+
+/* ---------------- DIARY ROUTES ---------------- */
+
+/* Create Entry */
+
+app.post("/api/diary", authenticateToken, async (req, res) => {
+
+  const { date, content, tag } = req.body;
+  const userId = req.user.id;
+
+  try {
+
+    let entry = await DiaryEntry.findOne({ userId, date });
+
+    if (entry) {
+      return res.status(400).json({
+        error: "Entry already exists for this date",
+      });
+    }
+
+    entry = new DiaryEntry({
+      userId,
+      date,
+      content,
+      tag,
+    });
+
+    await entry.save();
+
+    res.status(201).json({
+      id: entry._id,
+      message: "Diary entry saved",
+    });
+
+  } catch (err) {
+
+    res.status(500).json({ error: "Failed to save entry" });
+  }
+});
+
+
+/* Get Entry by Date */
+
+app.get("/api/diary/date/:date", authenticateToken, async (req, res) => {
+
+  const { date } = req.params;
+  const userId = req.user.id;
+
+  try {
+
+    const entry = await DiaryEntry.findOne({ userId, date });
+
+    res.json(entry || null);
+
+  } catch (err) {
+
+    res.status(500).json({ error: "Failed to fetch entry" });
+  }
+});
+
+
+/* Update Entry */
+
+app.put("/api/diary/:id", authenticateToken, async (req, res) => {
+
+  const { id } = req.params;
+  const { content, tag } = req.body;
+  const userId = req.user.id;
+
+  try {
+
+    const entry = await DiaryEntry.findOneAndUpdate(
+      { _id: id, userId },
+      { content, tag },
+      { new: true }
+    );
+
+    if (!entry) {
+      return res.status(404).json({ error: "Entry not found" });
+    }
+
+    res.json({
+      message: "Entry updated successfully",
+    });
+
+  } catch (err) {
+
+    res.status(500).json({ error: "Failed to update entry" });
+  }
+});
+
+
+/* ---------------- SERVER START ---------------- */
 
 async function startServer() {
 
   try {
+
     await mongoose.connect(MONGODB_URI);
     console.log("✅ Connected to MongoDB Atlas");
 
   } catch (err) {
+
     console.error("❌ MongoDB connection failed:", err);
     process.exit(1);
   }
