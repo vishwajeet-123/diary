@@ -16,7 +16,7 @@ export default function Login({ onLogin }: LoginProps) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const API_URL = "https://diary.onrender.com";
+  const API_URL = "https://diary-bl7x.onrender.com";
 
   useEffect(() => {
     if (location.state?.message) {

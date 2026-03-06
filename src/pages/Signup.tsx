@@ -6,7 +6,7 @@ import { User, Mail, Lock, ShieldQuestion, ArrowLeft, Eye, EyeOff } from "lucide
 export default function Signup() {
   const navigate = useNavigate();
 
-  const API_URL = "https://diary.onrender.com";
+  const API_URL = "https://diary-bl7x.onrender.com";
 
   const [formData, setFormData] = useState({
     name: "",
