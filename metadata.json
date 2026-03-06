@@ -1,0 +1,5 @@
+{
+  "name": "Personal Diary App",
+  "description": "A secure, mobile-first personal diary application with JWT authentication and search features.",
+  "requestFramePermissions": []
+}
