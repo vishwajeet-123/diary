@@ -249,7 +249,23 @@ app.get("/api/diary/month/:month/:year", authenticateToken, async (req: AuthRequ
   }
 
 });
+app.get("/api/diary/tag/:tag", authenticateToken, async (req, res) => {
+  const { tag } = req.params;
+  const userId = req.user.id;
 
+  try {
+
+    const entries = await DiaryEntry.find({
+      userId,
+      tag
+    }).sort({ date: -1 });
+
+    res.json(entries);
+
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch entries by tag" });
+  }
+});
 /* Update Entry */
 
 app.put("/api/diary/:id", authenticateToken, async (req: AuthRequest, res) => {
