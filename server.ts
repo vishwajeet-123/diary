@@ -295,7 +295,35 @@ app.put("/api/diary/:id", authenticateToken, async (req: AuthRequest, res) => {
     res.status(500).json({ error: "Failed to update entry" });
   }
 });
+/* Delete Entry */
 
+app.delete("/api/diary/:id", authenticateToken, async (req: AuthRequest, res) => {
+
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  try {
+
+    const entry = await DiaryEntry.findOneAndDelete({
+      _id: id,
+      userId
+    });
+
+    if (!entry) {
+      return res.status(404).json({ error: "Entry not found" });
+    }
+
+    res.json({
+      message: "Entry deleted successfully"
+    });
+
+  } catch (err) {
+
+    res.status(500).json({ error: "Failed to delete entry" });
+
+  }
+
+});
 
 /* ---------------- SERVER START ---------------- */
 

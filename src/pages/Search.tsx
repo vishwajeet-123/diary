@@ -20,7 +20,39 @@ export default function Search() {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const API_URL = "https://diary-bl7x.onrender.com";
+const API_URL = "https://diary-bl7x.onrender.com";
+
+const handleDelete = async (id: string) => {
+
+  const confirmDelete = window.confirm("Delete this diary entry?");
+
+  if (!confirmDelete) return;
+
+  try {
+
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_URL}/api/diary/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to delete entry");
+    }
+
+    // refresh search results
+    fetchResults();
+
+  } catch (err) {
+
+    console.error("Delete failed", err);
+
+  }
+
+};
 
 const fetchResults = async () => {
   setLoading(true);
@@ -212,19 +244,31 @@ const fetchResults = async () => {
                   </div>
                   <div className="flex-grow p-6 flex flex-col">
                     <div className="flex items-center justify-between mb-4">
-                      <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${tagInfo.bg} ${tagInfo.color}`}>
-                        <TagIcon className="w-3 h-3" />
-                        {entry.tag}
-                      </div>
-                      {searchType === "date" && (
-                        <button 
-                          onClick={() => navigate("/dashboard")}
-                          className="text-indigo-600 hover:text-indigo-700 font-bold text-xs flex items-center gap-1"
-                        >
-                          Edit Entry <ChevronRight className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
+
+  <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${tagInfo.bg} ${tagInfo.color}`}>
+    <TagIcon className="w-3 h-3" />
+    {entry.tag}
+  </div>
+
+  <div className="flex items-center gap-3">
+
+    <button 
+      onClick={() => navigate("/dashboard")}
+      className="text-indigo-600 hover:text-indigo-700 font-bold text-xs flex items-center gap-1"
+    >
+      Edit Entry <ChevronRight className="w-3 h-3" />
+    </button>
+
+    <button 
+      onClick={() => handleDelete(id)}
+      className="text-red-500 hover:text-red-600 font-bold text-xs"
+    >
+      Delete
+    </button>
+
+  </div>
+
+</div>
                     <p className="text-slate-700 leading-relaxed font-serif whitespace-pre-wrap flex-grow">
                       {entry.content}
                     </p>
