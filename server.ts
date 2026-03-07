@@ -297,21 +297,22 @@ app.put("/api/diary/:id", authenticateToken, async (req: AuthRequest, res) => {
 });
 /* Delete Entry */
 
-app.delete("/api/diary/:id", authenticateToken, async (req: AuthRequest, res) => {
-
-  const { id } = req.params;
-  const userId = req.user.id;
+app.delete("/api/diary/:id", authenticateToken, async (req, res) => {
 
   try {
 
-    const entry = await DiaryEntry.findOneAndDelete({
-      _id: id,
-      userId
-    });
+    const entry = await DiaryEntry.findById(req.params.id);
 
     if (!entry) {
       return res.status(404).json({ error: "Entry not found" });
     }
+
+    // check ownership
+    if (entry.userId.toString() !== req.user.id) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    await entry.deleteOne();
 
     res.json({
       message: "Entry deleted successfully"
@@ -319,7 +320,11 @@ app.delete("/api/diary/:id", authenticateToken, async (req: AuthRequest, res) =>
 
   } catch (err) {
 
-    res.status(500).json({ error: "Failed to delete entry" });
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to delete entry"
+    });
 
   }
 
