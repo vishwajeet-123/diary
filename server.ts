@@ -7,6 +7,11 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import { Request } from "express";
+
+interface AuthRequest extends Request {
+  user?: any;
+}
 
 dotenv.config();
 
@@ -164,7 +169,7 @@ app.post("/api/login", async (req, res) => {
 
 /* Create Entry */
 
-app.post("/api/diary", authenticateToken, async (req, res) => {
+app.post("/api/diary", authenticateToken, async (req: AuthRequest, res) => {
 
   const { date, content, tag } = req.body;
   const userId = req.user.id;
@@ -202,7 +207,7 @@ app.post("/api/diary", authenticateToken, async (req, res) => {
 
 /* Get Entry by Date */
 
-app.get("/api/diary/date/:date", authenticateToken, async (req, res) => {
+app.get("/api/diary/date/:date", authenticateToken, async (req: AuthRequest, res) => {
 
   const { date } = req.params;
   const userId = req.user.id;
@@ -211,18 +216,43 @@ app.get("/api/diary/date/:date", authenticateToken, async (req, res) => {
 
     const entry = await DiaryEntry.findOne({ userId, date });
 
-    res.json(entry || null);
+    res.json(entry ?? null);
 
   } catch (err) {
 
     res.status(500).json({ error: "Failed to fetch entry" });
   }
 });
+/* Get Entries by Month */
 
+app.get("/api/diary/month/:month/:year", authenticateToken, async (req: AuthRequest, res) => {
+
+  const { month, year } = req.params;
+  const userId = req.user.id;
+
+  try {
+
+    const startDate = `${year}-${month}-01`;
+    const endDate = `${year}-${month}-31`;
+
+    const entries = await DiaryEntry.find({
+      userId,
+      date: { $gte: startDate, $lte: endDate }
+    }).sort({ date: 1 });
+
+    res.json(entries);
+
+  } catch (err) {
+
+    res.status(500).json({ error: "Failed to fetch monthly entries" });
+
+  }
+
+});
 
 /* Update Entry */
 
-app.put("/api/diary/:id", authenticateToken, async (req, res) => {
+app.put("/api/diary/:id", authenticateToken, async (req: AuthRequest, res) => {
 
   const { id } = req.params;
   const { content, tag } = req.body;
