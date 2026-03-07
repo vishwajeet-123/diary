@@ -32,6 +32,12 @@ export default function Dashboard() {
     try {
 
       const token = localStorage.getItem("token");
+      if (!token) {
+  console.error("User not authenticated");
+  alert("Please login again");
+  return;
+}
+      
 
       const res = await fetch(`${API_URL}/api/diary/date/${selectedDate}`, {
         headers: {
@@ -92,7 +98,7 @@ export default function Dashboard() {
         const data = await res.json();
 
         if (!entryId) {
-          setEntryId(data.id);
+          setEntryId(data.id || data._id);
         }
 
         setShowSuccess(true);
