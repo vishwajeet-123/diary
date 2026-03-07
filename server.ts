@@ -249,7 +249,7 @@ app.get("/api/diary/month/:month/:year", authenticateToken, async (req: AuthRequ
   }
 
 });
-app.get("/api/diary/tag/:tag", authenticateToken, async (req, res) => {
+app.get("/api/diary/tag/:tag", authenticateToken, async (req: AuthRequest, res) => {
   const { tag } = req.params;
   const userId = req.user.id;
 
