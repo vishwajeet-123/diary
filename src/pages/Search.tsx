@@ -20,31 +20,60 @@ export default function Search() {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchResults = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      let url = "";
-      if (searchType === "date") url = `/api/diary/date/${date}`;
-      else if (searchType === "month") url = `/api/diary/month/${month}/${year}`;
-      else if (searchType === "tag") url = `/api/diary/tag/${selectedTag}`;
+  const API_URL = "https://diary-bl7x.onrender.com";
 
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      
-      if (searchType === "date") {
-        setResults(data ? [data] : []);
-      } else {
-        setResults(data);
-      }
-    } catch (err) {
-      console.error("Search failed", err);
-    } finally {
-      setLoading(false);
+const fetchResults = async () => {
+  setLoading(true);
+
+  try {
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      console.error("User not authenticated");
+      return;
     }
-  };
+
+    let url = "";
+
+    if (searchType === "date") {
+      url = `${API_URL}/api/diary/date/${date}`;
+    } 
+    else if (searchType === "month") {
+      url = `${API_URL}/api/diary/month/${month}/${year}`;
+    } 
+    else if (searchType === "tag") {
+      url = `${API_URL}/api/diary/tag/${selectedTag}`;
+    }
+
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error("Server error");
+    }
+
+    const data = await res.json();
+
+    if (searchType === "date") {
+      setResults(data ? [data] : []);
+    } else {
+      setResults(data);
+    }
+
+  } catch (err) {
+
+    console.error("Search failed", err);
+
+  } finally {
+
+    setLoading(false);
+
+  }
+};
 
   useEffect(() => {
     fetchResults();
